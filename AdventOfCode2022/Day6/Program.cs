@@ -1,6 +1,6 @@
 ﻿SolvePuzzle(4);
 SolvePuzzle(14);
-
+  
 static void SolvePuzzle(int markerLenght)
 {
     Queue<char> marker = new Queue<char>();
