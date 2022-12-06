@@ -6,7 +6,7 @@ SolvePuzzle2(CreateCrateStacks());
 
 static void SolvePuzzle1(List<Stack<char>> crateStacks)
 {
-    File.ReadLines("C:\\Users\\Alberto\\Desktop\\Development\\AdventOfCode2022\\Input\\Day5Moves.txt").ToList().ForEach(x =>
+    File.ReadLines(Path.Combine(Environment.CurrentDirectory, "Input\\Day5Moves.txt")).ToList().ForEach(x =>
     {
         string[] moves = x.Split(' ');
         int cratesToMove = int.Parse(moves[0]);
@@ -29,7 +29,7 @@ static void SolvePuzzle1(List<Stack<char>> crateStacks)
 
 static void SolvePuzzle2(List<Stack<char>> crateStacks)
 {
-    File.ReadLines("Day5Moves.txt").ToList().ForEach(x =>
+    File.ReadLines(Path.Combine(Environment.CurrentDirectory, "Input\\Day5Moves.txt")).ToList().ForEach(x =>
     {
         string[] moves = x.Split(' ');
         int cratesToMove = int.Parse(moves[0]);
@@ -68,7 +68,7 @@ static List<Stack<char>> CreateCrateStacks()
         new List<char>(),
         new List<char>(),
     };
-    File.ReadLines("Day5Crates.txt").ToList().ForEach(x =>
+    File.ReadLines(Path.Combine(Environment.CurrentDirectory, "Input\\Day5Crates.txt")).ToList().ForEach(x =>
     {
         for (int i = 1; i < 36; i = i + 4)
         {

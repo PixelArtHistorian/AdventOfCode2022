@@ -1,32 +1,31 @@
-﻿SolvePuzzle1();
+﻿SolvePuzzle(4);
+SolvePuzzle(14);
 
-
-static void SolvePuzzle1()
+static void SolvePuzzle(int markerLenght)
 {
     Queue<char> marker = new Queue<char>();
 
-    string buffer = File.ReadAllText("C:\\Users\\Alberto\\Desktop\\Development\\AdventOfCode2022\\Input\\Day6.txt");
-
-    foreach(char character in buffer)
+    string buffer = File.ReadAllText(Path.Combine(Path.Combine(Environment.CurrentDirectory, "Input\\Day6.txt")));
+    for (int i = 0; i < buffer.Length; i++)
     {
+        var character = buffer[i];
         if (!marker.Contains(character))
         {
             marker.Enqueue(character);
-            if(marker.Count == 4)
+            if (marker.Count == markerLenght)
             {
-                Console.WriteLine($"Found marker {buffer.IndexOf(character) + 1}");
+                Console.WriteLine($"Found marker {i + 1}");
+                break;
             }
         }
         else
         {
-            char repeatedCharacter;
             do
             {
-                repeatedCharacter = marker.Dequeue();
+                marker.Dequeue();
             } 
-            while (repeatedCharacter != character);
+            while (marker.Contains(character));
+            marker.Enqueue(character);
         }
     }
-
-
 }
