@@ -1,5 +1,6 @@
 ﻿SolvePuzzleOne("Input\\Day7.txt", 100000);
 SolvePuzzleTwo("Input\\Day7.txt", 30000000, 70000000);
+
 void SolvePuzzleOne(string inputFilePath, int maxDirectorySize)
 {
     List<AdventDirectory> undersizedDirectories = FindUndersizedDirectories(BuildRootDirectory(inputFilePath), maxDirectorySize);
