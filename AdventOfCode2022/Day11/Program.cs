@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-var monkeys = CreateMonkeyList("Input\\Example.txt");
+﻿var monkeys = CreateMonkeyList("Input\\Day11.txt");
 PlayRound(monkeys, 10000);
 Console.WriteLine($"{CalculateMonkeyBusiness(monkeys.Values)}");
 
@@ -9,11 +7,12 @@ IDictionary<string, Monkey> CreateMonkeyList(string inputFile)
 {
     Dictionary<string, Monkey> monkeys = new Dictionary<string, Monkey>();
     string monkeyName = "";
-    Queue<ItemToThrow> startingItems = new Queue<ItemToThrow>();
-    Func<ItemToThrow, ItemToThrow>? operation = null;
-    Func<ItemToThrow, bool>? test = null;
+    Queue<long> startingItems = new Queue<long>();
+    Func<long, long>? operation = null;
+    Func<long, bool>? test = null;
     List<string> targetMonkeys = new List<string>();
-    int simianCounter = 0;
+    long simianCounter = 0;
+    long worryManagementIndex = 1;
 
     File.ReadLines(inputFile).ToList().ForEach(line =>
     {
@@ -31,7 +30,7 @@ IDictionary<string, Monkey> CreateMonkeyList(string inputFile)
             var items = elements[1].Trim().Split(", ");
             foreach (var item in items)
             {
-                startingItems.Enqueue(new ItemToThrow(int.Parse(item)));
+                startingItems.Enqueue(long.Parse(item));
             }
         }
         if (elements[0].Trim().StartsWith("Operation"))
@@ -43,38 +42,36 @@ IDictionary<string, Monkey> CreateMonkeyList(string inputFile)
                 {
                     operation = x =>
                     {
-                        x.SquareWorries();
-                        return x;
+                        return x * x;
                     };
                 }
                 else
                 {
-                    var coefficient = int.Parse(operationElements[5]);
+                    var coefficient = long.Parse(operationElements[5]);
                     operation = x =>
                     {
-                        x.MultiplyWorriesBy(coefficient);
-                        return x;
+                        return x * coefficient;
                     };
                 }
             }
             else
             {
-                var increase = int.Parse(operationElements[5]);
+                var increase = long.Parse(operationElements[5]);
                 operation = x =>
                 {
-                    x.AddWorries(increase);
-                    return x;
+                    return x + increase;
                 };
             }
         }
         if (elements[0].Trim().StartsWith("Test"))
         {
             var testElements = elements[1].Split(" ");
-            int divisor = int.Parse(testElements[3]);
+            long divisor = long.Parse(testElements[3]);
             test = x =>
             {
-                return x.IsDivisibleBy(divisor);
+                return x % divisor == 0;
             };
+            worryManagementIndex *= divisor;
         }
         if (elements[0].Trim().StartsWith("If true"))
         {
@@ -91,33 +88,33 @@ IDictionary<string, Monkey> CreateMonkeyList(string inputFile)
         {
             monkeys.Add(monkeyName, new Monkey(monkeyName, startingItems, operation, test, targetMonkeys));
             monkeyName = "";
-            startingItems = new Queue<ItemToThrow>();
+            startingItems = new Queue<long>();
             operation = null;
             test = null;
             targetMonkeys = new List<string>();
             simianCounter = 0;
         }
     });
+    for (long i = 0; i < monkeys.Count(); i++)
+    {
+        monkeys[$"Monkey-{i}"].WorryManagementIndex = worryManagementIndex;
+    }
     return monkeys;
 }
 
-int CalculateMonkeyBusiness(IEnumerable<Monkey> monkeys)
+long CalculateMonkeyBusiness(IEnumerable<Monkey> monkeys)
 {
     var topMonkeys = monkeys.OrderByDescending(x => x.Inspections).Take(2).Select(x => x.Inspections).ToList();
-    return topMonkeys[0] * topMonkeys[1];
+    return (long)topMonkeys[0] * (long)topMonkeys[1];
 }
 
-void PlayRound(IDictionary<string, Monkey> monkeys, int numberOfRounds)
+void PlayRound(IDictionary<string, Monkey> monkeys, long numberOfRounds)
 {
-    for (int i = 0; i < numberOfRounds; i++)
+    for (long i = 0; i < numberOfRounds; i++)
     {
         foreach (var monkey in monkeys.Values)
         {
-            PlayTurn(monkey, monkeys);     
-        }
-        if (i == 0 || i == 19 || i == 999)
-        {
-            Console.WriteLine($"{monkeys["Monkey-0"].Inspections}, {monkeys["Monkey-1"].Inspections}, {monkeys["Monkey-2"].Inspections}, {monkeys["Monkey-3"].Inspections}");
+            PlayTurn(monkey, monkeys);
         }
         if (i == numberOfRounds)
         {
@@ -131,7 +128,7 @@ void PlayTurn(Monkey monkey, IDictionary<string, Monkey> monkeys)
 {
     while (monkey.StartingItems.Count() > 0)
     {
-        ItemToThrow thrownItem;
+        long thrownItem;
         string targetMonkey = monkey.ThrowItem(out thrownItem);
         monkeys[targetMonkey].StartingItems.Enqueue(thrownItem);
     }
@@ -141,15 +138,16 @@ void PlayTurn(Monkey monkey, IDictionary<string, Monkey> monkeys)
 class Monkey
 {
     public string Name { get; }
-    public Queue<ItemToThrow> StartingItems { get; }
-    Func<ItemToThrow, ItemToThrow> Operation { get; }
-    Func<ItemToThrow, bool> Test { get; }
+    public Queue<long> StartingItems { get; }
+    Func<long, long> Operation { get; }
+    Func<long, bool> Test { get; }
     public List<string> TargetMonkeys { get; }
-    public int Inspections { get; private set; }
+    public long Inspections { get; private set; }
+    public long WorryManagementIndex { get; set; } = 1;
     public Monkey(string name,
-        Queue<ItemToThrow> startingItems,
-        Func<ItemToThrow, ItemToThrow> operation,
-        Func<ItemToThrow, bool> test,
+        Queue<long> startingItems,
+        Func<long, long> operation,
+        Func<long, bool> test,
         List<string> targetMonkeys)
     {
         Name = name;
@@ -160,99 +158,30 @@ class Monkey
         Inspections = 0;
     }
 
-    public string ThrowItem(out ItemToThrow itemToThrow)
+    public string ThrowItem(out long itemToThrow)
     {
-        ItemToThrow item = StartingItems.Dequeue();
+        long item = StartingItems.Dequeue();
         item = InspectItem(item);
-        //item = ReduceWorry(item);
+        item = ReduceWorry(item);
+        Inspections++;
         itemToThrow = item;
 
-        if (Test(item))
+        if (Test(itemToThrow))
         {
             return TargetMonkeys.First();
         }
         return TargetMonkeys.Last();
     }
 
-    private ItemToThrow InspectItem(ItemToThrow item)
+    private long InspectItem(long item)
     {
         item = Operation(item);
-        Inspections++;
         return item;
     }
 
-    private int ReduceWorry(int item)
+    private long ReduceWorry(long item)
     {
-        return item / 3;
-    }
-}
-class ItemToThrow
-{
-    private List<int> Worries { get; set; } = new List<int>();
-
-    public ItemToThrow(int number)
-    {
-        Worries.Add(number);
-    }
-
-    public bool IsDivisibleBy(int divisor)
-    {
-        if(Worries.Count > 1)
-        {
-            int divisionCounter = 1;
-            foreach(var worry in Worries)
-            {
-                for (int i = 0; i < worry; i++)
-                {
-                    if(divisionCounter == divisor)
-                    {
-                        divisionCounter = 0;
-                    }
-                    divisionCounter++;
-                }
-            }
-            return divisionCounter == divisor;
-        }
-        return Worries.First() % divisor == 0;
-    }
-
-    public void AddWorries(int worry)
-    {
-        if(int.MaxValue - Worries.Last() < worry)
-        {
-            Worries.Add(worry);
-        }
-        else
-        {
-            Worries[Worries.Count() - 1] += worry;
-        }
-    }
-
-    public void SquareWorries()
-    {
-        if(Worries.Count > 1)
-        {
-            for (int i = 0; i < Worries.Count; i++)
-            {
-                int increment = Worries[i];
-                for (int j = 0; j < increment - 1; j++)
-                {
-                    AddWorries(increment);
-                }
-            }
-        }
-        Worries[0] *= Worries[0];
-    }
-
-    public void MultiplyWorriesBy(int coefficient)
-    {
-        for (int i = 0; i < Worries.Count; i++)
-        {
-            int increment = Worries[i];
-            for (int j = 0; j < coefficient - 1; j++)
-            {
-                AddWorries(increment);
-            }
-        }
+        //return item / 3;
+        return item % WorryManagementIndex;
     }
 }
